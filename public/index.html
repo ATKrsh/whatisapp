@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whatisapp | AI WhatsApp Auto-Replier & Monitor</title>
+    <meta name="description" content="A premium DIY AI automation panel for monitoring, configuring, and testing your automated WhatsApp responder.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- QRious CDN for Client-side QR Code rendering -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- CSS Link -->
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Titlebar */
+        .titlebar {
+            -webkit-app-region: drag;
+            height: 32px;
+            background: var(--bg-dark); /* Fallback */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 9999;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+        .titlebar-drag {
+            padding-left: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #9ca3af;
+            letter-spacing: 1px;
+        }
+        .titlebar-controls {
+            -webkit-app-region: no-drag;
+            display: flex;
+            height: 100%;
+        }
+        .win-btn {
+            background: transparent;
+            border: none;
+            color: #9ca3af;
+            width: 46px;
+            height: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .win-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .close-btn:hover { background: #ef4444; color: #fff; }
+        body { padding-top: 32px !important; }
+    </style>
+</head>
+<body>
+    <div class="titlebar">
+        <div class="titlebar-drag">WHATISAPP</div>
+        <div class="titlebar-controls">
+            <button id="minBtn" class="win-btn">─</button>
+            <button id="maxBtn" class="win-btn">◻</button>
+            <button id="closeBtn" class="win-btn close-btn">✕</button>
+        </div>
+    </div>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="chat-bubble-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <div class="logo-text">
+                    <h1>Whatisapp</h1>
+                    <span class="sub-logo">AI WhatsApp Responder Dashboard</span>
+                </div>
+            </div>
+            <div class="header-status">
+                <div class="status-indicator">
+                    <span class="status-dot pulsing state-off" id="connection-status-dot"></span>
+                    <span id="connection-status-text">Connecting to Server...</span>
+                </div>
+                <div class="status-indicator">
+                    <span class="status-dot state-off" id="gemini-status-dot"></span>
+                    <span id="gemini-status-text">AI Status: Inactive</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Grid -->
+        <main class="app-workspace">
+            
+            <!-- Left Side: Connection & Logs Console -->
+            <section class="left-section">
+                <!-- QR Code & Status Card -->
+                <div class="card glassmorphic connection-card" id="card-connection-status">
+                    <div class="card-header">
+                        <h2>WhatsApp Connectivity</h2>
+                        <span class="badge" id="client-state-badge">DISCONNECTED</span>
+                    </div>
+                    
+                    <div class="connection-content">
+                        <!-- QR Code Area (Shown only when scanning needed) -->
+                        <div id="qr-container" class="qr-box hidden">
+                            <canvas id="qr-canvas"></canvas>
+                            <p class="qr-instructions">Scan this QR code using WhatsApp on your phone (Linked Devices) to authenticate the bot.</p>
+                        </div>
+                        
+                        <!-- Connected Status Area -->
+                        <div id="connected-container" class="connected-box hidden">
+                            <div class="success-checkmark">
+                                <svg viewBox="0 0 24 24" width="64" height="64" stroke="var(--accent-green)" stroke-width="2.5" fill="none" class="checkmark-icon"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            </div>
+                            <h3>Authenticated & Listening</h3>
+                            <p class="connected-desc" id="connected-account-text">The bot is securely linked to your WhatsApp account. Incoming messages will be processed based on your rules and system prompts.</p>
+                            <button id="btn-unlink-account" class="btn btn-danger" title="Unlink this WhatsApp account and re-scan QR code">
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" style="margin-right:6px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Unlink Account
+                            </button>
+                        </div>
+
+                        <!-- Syncing Status Area -->
+                        <div id="syncing-container" class="syncing-box">
+                            <div class="spinner"></div>
+                            <h3 id="init-step-title">Launching Browser Engine</h3>
+                            <p class="syncing-desc" id="init-step-desc">Starting up Chromium in the background to connect to WhatsApp Web...</p>
+                            
+                            <!-- Step progress indicators -->
+                            <div class="init-steps">
+                                <div class="init-step active" id="step-1">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">Launch Browser</span>
+                                </div>
+                                <div class="init-step-connector"></div>
+                                <div class="init-step" id="step-2">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">Open WhatsApp Web</span>
+                                </div>
+                                <div class="init-step-connector"></div>
+                                <div class="init-step" id="step-3">
+                                    <span class="step-dot"></span>
+                                    <span class="step-label">Generate QR Code</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Elapsed time & timeout warning -->
+                            <div class="init-timer" id="init-timer">
+                                <span id="init-elapsed">Elapsed: 0s</span>
+                            </div>
+                            
+                            <!-- Shown only after 60s -->
+                            <div class="init-timeout-warning hidden" id="init-timeout-warning">
+                                ⚠️ This is taking longer than usual. WhatsApp Web may be slow or Chromium may need more time on first launch.
+                                <button class="btn btn-sm" id="btn-retry-init" style="margin-top:10px;width:100%">🔄 Restart Initialization</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Event logs Console -->
+                <div class="card glassmorphic console-card">
+                    <div class="console-header">
+                        <h2>Live Activity Logs</h2>
+                        <button id="btn-clear-logs" class="btn-text">Clear DB Logs</button>
+                    </div>
+                    <div class="console-body" id="console-logs-output">
+                        <!-- Logs injected dynamically here -->
+                        <div class="log-entry system-info">Waiting for WebSocket connection...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Side: Controls and Configurations -->
+            <section class="right-section">
+                <div class="tabs-container card glassmorphic">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="tab-monitor">Analytics</button>
+                        <button class="tab-btn" data-tab="tab-config">Settings & Prompts</button>
+                        <button class="tab-btn" data-tab="tab-simulator">AI Sandbox</button>
+                    </div>
+
+                    <div class="tabs-content">
+                        <!-- TAB: Analytics -->
+                        <div class="tab-pane active" id="tab-monitor">
+                            <h2>Bot Analytics</h2>
+                            <p class="description">Overview of auto-responses and interactions processed by your bot.</p>
+                            
+                            <div class="analytics-grid">
+                                <div class="stat-card">
+                                    <span class="stat-label">Total Replied</span>
+                                    <span class="stat-value" id="stat-total-replied">0</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">Ignored / Spams</span>
+                                    <span class="stat-value" id="stat-total-ignored">0</span>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-label">Total Chats</span>
+                                    <span class="stat-value" id="stat-active-threads">0</span>
+                                </div>
+                            </div>
+
+                            <div class="info-module border-top">
+                                <h3>Operational Safeguards</h3>
+                                <ul class="safeguards-list">
+                                    <li>🛡️ <strong>Rate Limiting</strong>: Maximum 1 response per user every 10 seconds.</li>
+                                    <li>🚫 <strong>Spam Protection</strong>: Limits total replies to 20 per user per hour.</li>
+                                    <li>👥 <strong>Group Protection</strong>: Group messages are ignored to prevent recursive bot fights.</li>
+                                    <li>👤 <strong>Self Ignoring</strong>: The bot never responds to messages sent by you.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- TAB: Config -->
+                        <div class="tab-pane" id="tab-config">
+                            <h2>Configuration Panel</h2>
+                            <p class="description">Modify AI variables, blacklist/whitelist targets, and customize personality prompts.</p>
+                            
+                            <form id="form-config" class="config-form">
+                                <div class="setting-grid">
+                                    <div class="setting-item">
+                                        <label for="select-provider">AI Model Provider:</label>
+                                        <select id="select-provider">
+                                            <option value="gemini" selected>Google Gemini (Cloud)</option>
+                                            <option value="ollama">Ollama (Local Open-Source)</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item flex-row-center justify-between">
+                                        <label for="toggle-autoreply">Auto-Reply Mode:</label>
+                                        <label class="switch">
+                                            <input type="checkbox" id="toggle-autoreply" checked>
+                                            <span class="slider round"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div id="gemini-settings" class="setting-group">
+                                    <div class="setting-item">
+                                        <label for="input-api-key">Gemini API Key:</label>
+                                        <input type="password" id="input-api-key" placeholder="Enter Google Gemini API Key">
+                                        <span class="hint">Get a free key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>. Placed in .env on save.</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label for="select-model">Model Selector:</label>
+                                        <select id="select-model">
+                                            <option value="gemini-2.0-flash" selected>gemini-2.0-flash (Fast & Recommended)</option>
+                                            <option value="gemini-2.5-flash">gemini-2.5-flash (Standard)</option>
+                                            <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite (Lite)</option>
+                                            <option value="gemini-1.5-flash">gemini-1.5-flash (Legacy Flash)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="ollama-settings" class="setting-group hidden">
+                                    <div class="setting-item">
+                                        <label for="input-ollama-url">Ollama Server URL:</label>
+                                        <input type="text" id="input-ollama-url" placeholder="http://localhost:11434" value="http://localhost:11434">
+                                        <span class="hint">Your local Ollama instance endpoint. Make sure Ollama is running on your PC.</span>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label for="input-ollama-model">Ollama Model Name:</label>
+                                        <input type="text" id="input-ollama-model" placeholder="e.g., llama3, gemma2, phi3" value="llama3">
+                                        <span class="hint">Model to use. Ensure you have run <code>ollama pull &lt;model&gt;</code> in your command line.</span>
+                                    </div>
+                                </div>
+
+                                <div class="setting-item">
+                                    <label for="textarea-prompt">AI Bot System Instruction / Persona:</label>
+                                    <textarea id="textarea-prompt" rows="5" placeholder="Define how the bot should behave..."></textarea>
+                                </div>
+
+                                <div class="setting-item border-top">
+                                    <label for="input-blacklist">Phone Blacklist (Comma separated numbers, e.g. 919876543210):</label>
+                                    <input type="text" id="input-blacklist" placeholder="No spaces, include country code">
+                                    <span class="hint">The bot will never auto-reply to these numbers.</span>
+                                </div>
+
+                                <div class="setting-item flex-row-center justify-between">
+                                    <div>
+                                        <label for="toggle-restrict-whitelist">Restrict to Whitelist:</label>
+                                        <span class="hint block">When active, the bot ONLY replies to numbers listed in the whitelist.</span>
+                                    </div>
+                                    <label class="switch">
+                                        <input type="checkbox" id="toggle-restrict-whitelist">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </div>
+
+                                <div class="setting-item" id="whitelist-input-wrapper">
+                                    <label for="input-whitelist">Phone Whitelist (Comma separated numbers):</label>
+                                    <input type="text" id="input-whitelist" placeholder="Include country code, e.g. 919999999999">
+                                </div>
+
+                                <div class="form-actions margin-top">
+                                    <button type="submit" class="btn btn-primary btn-block">Save Configuration</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- TAB: Sandbox -->
+                        <div class="tab-pane" id="tab-simulator">
+                            <h2>AI Sandbox Chat</h2>
+                            <p class="description">Test your prompts and conversations locally without sending messages to WhatsApp.</p>
+                            
+                            <div class="chat-simulator-container">
+                                <div class="chat-messages" id="simulator-chat-box">
+                                    <div class="chat-message system">
+                                        System instruction loaded. Sandbox conversation initialized.
+                                    </div>
+                                </div>
+                                <div class="chat-input-row">
+                                    <input type="text" id="input-simulator-message" placeholder="Type a message to test the AI replies...">
+                                    <button id="btn-send-simulator" class="btn btn-primary">Send</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast-notification">
+        <span id="toast-icon">✓</span>
+        <span id="toast-message">Saved successfully</span>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>

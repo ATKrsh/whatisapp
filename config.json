@@ -1,0 +1,11 @@
+{
+  "autoReply": true,
+  "geminiModel": "gemini-2.0-flash",
+  "basePrompt": "Reply like a friend texting on WhatsApp. Keep it very short, casual, in the same language as the message. No formal greetings.",
+  "whitelist": [],
+  "blacklist": [],
+  "restrictToWhitelist": false,
+  "llmProvider": "ollama",
+  "ollamaUrl": "http://localhost:11434",
+  "ollamaModel": "qwen2.5:7b"
+}

@@ -1,0 +1,9 @@
+[2026-06-11 02:13:49] Starting test-switch script...
+[2026-06-11 02:13:49] Running WebSocket client loop...
+[2026-06-11 02:13:49] WebSocket Connection Opened.
+[2026-06-11 02:13:49] Testing GET /api/config...
+[2026-06-11 02:13:49] GET status: 200, data: {"autoReply":false,"geminiModel":"gemini-2.5-flash-lite","basePrompt":"You are an AI auto-replier representing the user (a real person). Your goal is to reply to incoming WhatsApp messages exactly like the user would. Do NOT act like a generic customer support chatbot or say things like 'How can I assist you today?' or 'I am an AI assistant'. Match the language, slang, tone, and formatting of the sender (e.g., if they write in Hinglish, Hindi, or informal text, reply naturally in Hinglish, Hindi, or informal text). Keep replies short, casual, and human-like.","whitelist":[],"blacklist":[],"restrictToWhitelist":false}
+[2026-06-11 02:13:49] Received WebSocket Message: {"type":"STATUS_SYNC","state":{"clientState":"CONNECTED","hasQr":false,"qrData":"","geminiActive":true,"autoReply":false}}
+[2026-06-11 02:13:49] WebSocket Error: 'charmap' codec can't encode character '\U0001f440' in position 1582: character maps to <undefined>
+[2026-06-11 02:14:10] WebSocket Error: [WinError 10054] An existing connection was forcibly closed by the remote host
+[2026-06-11 02:14:10] WebSocket Closed: None - None

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whatisapp - Quick Switch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            
+            --state-active: #10b981;
+            --state-inactive: #4b5563;
+            --glow-active: rgba(16, 185, 129, 0.4);
+            --glow-inactive: rgba(75, 85, 99, 0.2);
+            --glow-msg: rgba(239, 68, 68, 0.8);
+            --glow-reply: rgba(16, 185, 129, 0.8);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(16, 185, 129, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(59, 130, 246, 0.05) 0%, transparent 40%);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--state-inactive);
+            box-shadow: 0 0 8px var(--state-inactive);
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.active .status-dot {
+            background: var(--state-active);
+            box-shadow: 0 0 12px var(--state-active);
+        }
+
+        .status-badge.active {
+            color: var(--text-primary);
+            border-color: rgba(16, 185, 129, 0.2);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        /* Giant Glowing Button */
+        .switch-button-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .glow-ring {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: transparent;
+            box-shadow: 0 0 40px var(--glow-inactive);
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1;
+        }
+
+        .switch-button {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 30%, #1f2937, #111827);
+            border: 4px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: inset 0 4px 10px rgba(255, 255, 255, 0.05), 
+                        0 10px 20px rgba(0, 0, 0, 0.4);
+            z-index: 2;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .switch-button:active {
+            transform: scale(0.96);
+            box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.02), 
+                        0 5px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .switch-icon {
+            width: 44px;
+            height: 44px;
+            fill: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .switch-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Active Switch States */
+        .switch-button-container.active .glow-ring {
+            box-shadow: 0 0 60px var(--glow-active);
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        .switch-button-container.active .switch-button {
+            border-color: rgba(16, 185, 129, 0.5);
+            background: radial-gradient(circle at 50% 30%, #111827, #061f14);
+        }
+
+        .switch-button-container.active .switch-icon {
+            fill: var(--state-active);
+            filter: drop-shadow(0 0 8px var(--state-active));
+        }
+
+        .switch-button-container.active .switch-text {
+            color: var(--state-active);
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+        }
+
+        /* Flash Effects */
+        @keyframes pulse-glow {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        .flash-msg .glow-ring {
+            box-shadow: 0 0 80px var(--glow-msg) !important;
+            background: rgba(239, 68, 68, 0.05);
+            transition: none !important;
+        }
+
+        .flash-msg .switch-button {
+            border-color: #ef4444 !important;
+        }
+
+        .flash-reply .glow-ring {
+            box-shadow: 0 0 80px var(--glow-reply) !important;
+            background: rgba(16, 185, 129, 0.08);
+            transition: none !important;
+        }
+
+        .flash-reply .switch-button {
+            border-color: #10b981 !important;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            padding: 0 10px;
+        }
+
+        /* Floating particles background */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    <div class="container">
+        <h1>WHATISAPP</h1>
+        
+        <div class="status-badge" id="statusBadge">
+            <div class="status-dot"></div>
+            <span id="statusText">Connecting...</span>
+        </div>
+
+        <div class="switch-button-container" id="switchContainer">
+            <div class="glow-ring"></div>
+            <button class="switch-button" id="switchBtn">
+                <svg class="switch-icon" viewBox="0 0 24 24">
+                    <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6Z" />
+                </svg>
+                <span class="switch-text" id="btnLabel">OFFLINE</span>
+            </button>
+        </div>
+
+        <p class="info-text" id="infoText">
+            Tap the button to toggle the AI auto-replier. Red glow means a message came in, and green means an AI response was sent.
+        </p>
+    </div>
+
+    <script>
+        const switchContainer = document.getElementById('switchContainer');
+        const switchBtn = document.getElementById('switchBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        const btnLabel = document.getElementById('btnLabel');
+        const infoText = document.getElementById('infoText');
+
+        let autoReplyState = false;
+        let ws;
+
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('Connected to Whatisapp Server');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'STATUS_SYNC') {
+                        updateState(data.state.autoReply);
+                        statusText.innerText = data.state.clientState;
+                        if (data.state.clientState === 'CONNECTED') {
+                            statusBadge.classList.add('active');
+                        } else {
+                            statusBadge.classList.remove('active');
+                        }
+                    } else if (data.type === 'NEW_LOG') {
+                        // Flash Red when any message arrives (reply is empty)
+                        if (!data.log.reply) {
+                            triggerFlash('flash-msg');
+                        } 
+                        // Flash Green when a reply is successfully sent
+                        else if (data.log.status === 'SUCCESS') {
+                            triggerFlash('flash-reply');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing WebSocket message', e);
+                }
+            };
+
+            ws.onclose = () => {
+                statusText.innerText = 'DISCONNECTED';
+                statusBadge.classList.remove('active');
+                btnLabel.innerText = 'OFFLINE';
+                switchContainer.classList.remove('active');
+                setTimeout(connectWebSocket, 3000);
+            };
+        }
+
+        function updateState(isActive) {
+            autoReplyState = isActive;
+            if (isActive) {
+                switchContainer.classList.add('active');
+                btnLabel.innerText = 'AI ACTIVE';
+            } else {
+                switchContainer.classList.remove('active');
+                btnLabel.innerText = 'AI INACTIVE';
+            }
+        }
+
+        function triggerFlash(className) {
+            switchContainer.classList.add(className);
+            setTimeout(() => {
+                switchContainer.classList.remove(className);
+            }, 1000);
+        }
+
+        async function toggleAutoReply() {
+            try {
+                const response = await fetch('/api/config');
+                const currentConfig = await response.json();
+                
+                const updatedConfig = {
+                    ...currentConfig,
+                    autoReply: !autoReplyState
+                };
+
+                const saveResponse = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedConfig)
+                });
+                
+                const result = await saveResponse.json();
+                if (result.success) {
+                    updateState(result.config.autoReply);
+                }
+            } catch (err) {
+                console.error('Failed to toggle auto-reply:', err);
+            }
+        }
+
+        switchBtn.addEventListener('click', toggleAutoReply);
+        connectWebSocket();
+    </script>
+</body>
+</html>
